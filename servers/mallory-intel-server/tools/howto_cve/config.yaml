@@ -1,0 +1,35 @@
+name: howto_cve
+enabled: true
+description: Returns step-by-step instructions for fetching data for CVEs.
+module: tool.py
+entry_point: entry_point
+inputs: []
+outputs:
+- name: instructions
+  type: string
+prompts:
+- name: cve-investigation
+  description: Complete CVE investigation workflow using multiple tools
+  arguments:
+  - name: cve_id
+    description: CVE identifier (e.g., CVE-2023-12345)
+    required: false
+  template: "# CVE Investigation Workflow: {cve_id}\n\n## Step-by-step investigation\
+    \ process:\n\n### 1. Get Basic Instructions\n```\nhowto.cve()\n```\n\n### 2. Search\
+    \ External Intelligence\n```\nvirustotal.query(query=\"{cve_id}\")\n```\n- Look\
+    \ for exploitation attempts\n- Check for related malware samples\n- Review vendor\
+    \ detections\n\n### 3. Check Internal Intelligence  \n```\nmallory.query(indicator=\"\
+    {cve_id}\")\n```\n- Past incidents in your environment\n- Internal risk assessments\n\
+    - Remediation status\n\n### 4. Investigate Related URLs (if applicable)\nIf the\
+    \ CVE involves web exploitation:\n```\nurlscan.scan(url=\"https://exploit-site.com\"\
+    )\n```\n\n### 5. Analysis Checklist:\n- [ ] CVSS score and severity\n- [ ] Affected\
+    \ systems in environment\n- [ ] Available patches/mitigations\n- [ ] Active exploitation\
+    \ evidence\n- [ ] Related threat campaigns\n- [ ] Remediation priority\n\n###\
+    \ 6. Documentation:\n- Compile findings from all sources\n- Create incident report\
+    \ if needed\n- Update threat intelligence database\n- Plan remediation activities\n\
+    \n**Start with**: howto.cve() for detailed instructions\n"
+resource_templates:
+- uriTemplate: cve://report/{cve_id}
+  name: CVE Investigation Report
+  description: Complete CVE investigation report combining multiple sources
+  mimeType: text/markdown

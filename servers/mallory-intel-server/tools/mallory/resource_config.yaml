@@ -1,0 +1,16 @@
+handlers:
+  - uri_prefix: "mallory://"
+    uri_pattern: "mallory://intel/{indicator}"
+    type: "single_tool"
+    tool_name: "mallory"
+    parameter_mapping:
+      indicator: "indicator"
+    metadata:
+      source: "Mallory Internal Intelligence"
+    response_template: |
+      {
+        "source": "{source}",
+        "indicator": "{indicator}",
+        "timestamp": "{timestamp}",
+        "data": {tool_result}
+      } 

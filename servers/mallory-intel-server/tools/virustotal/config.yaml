@@ -1,0 +1,51 @@
+name: virustotal
+enabled: true  # Set to false to disable this tool
+description: Query VirusTotal for threat intelligence about files, domains, or URLs.
+module: tool.py
+entry_point: virustotal_query
+inputs:
+  - name: query
+    type: string
+    required: true
+outputs:
+  - name: result
+    type: dict
+
+prompts:
+  - name: virustotal-howto
+    description: Instructions for querying VirusTotal for threat intelligence
+    arguments:
+      - name: indicator
+        description: Hash, URL, domain, or IP to analyze
+        required: false
+    template: |
+      # VirusTotal Threat Intelligence Query
+
+      ## How to use the virustotal.query tool:
+
+      1. **Prepare your indicator**: {indicator}
+         - Supported: File hashes (MD5, SHA1, SHA256), URLs, domains, IP addresses
+
+      2. **Execute the query**:
+         ```
+         virustotal.query(query="{indicator}")
+         ```
+
+      3. **Analyze results**:
+         - Check detection ratio (malicious/total scanners)
+         - Review vendor classifications
+         - Look for behavioral analysis data
+         - Note first/last seen dates
+
+      4. **Next steps**:
+         - Cross-reference with mallory.query for internal intel
+         - Use urlscan.scan for URL-specific analysis
+         - Document findings for threat assessment
+
+      **Example**: virustotal.query(query="{indicator}")
+
+resource_templates:
+  - uriTemplate: "virustotal://query/{indicator}"
+    name: "VirusTotal Intelligence Report"
+    description: "Dynamic VirusTotal threat intelligence report for any indicator"
+    mimeType: "application/json" 

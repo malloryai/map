@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Registry: {{ server.name }} - Mallory Automation Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+
+    <!-- Header -->
+    <div class="row mb-4 align-items-center">
+        <div class="col">
+            <h1 class="h2 mb-0"><strong>{{ server.name }}</strong></h1>
+            <p class="mb-0 text-muted">Discovered MCP Server Details</p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('ui.registry_dashboard') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Back to Registry
+            </a>
+            <a href="{{ url_for('ui.create_server_with_preselection', server_name=server.name) }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i>Use These Tools
+            </a>
+        </div>
+    </div>
+
+    <!-- Server Details Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">
+                        <i class="bi bi-info-circle me-2"></i>Server Information
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h5>Description</h5>
+                            <p class="text-secondary">{{ server.description }}</p>
+                            <h5>Path</h5>
+                            <p><code>{{ server.path }}</code></p>
+                        </div>
+                        <div class="col-md-4">
+                            <ul class="list-group">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Status
+                                    <span class="badge bg-secondary">{{ server.status }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Transport
+                                    <span class="badge bg-info">{{ server.transport }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Discovery
+                                    <span class="badge bg-light text-dark">{{ server.discovery_method }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Last Seen
+                                    <span class="badge bg-light text-dark">{{ server.last_discovered[:19] }}</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tools Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">
+                        <i class="bi bi-tools me-2"></i>Available Tools ({{ server.tools|length }})
+                    </h4>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Tool Name</th>
+                                <th>Description</th>
+                                <th class="text-center">Inputs</th>
+                                <th class="text-center">Outputs</th>
+                                <th class="text-center">Status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tool in server.tools %}
+                            <tr>
+                                <td><strong>{{ tool.name }}</strong></td>
+                                <td class="text-secondary">{{ tool.description | truncate(100) }}</td>
+                                <td class="text-center">{{ tool.data.inputs|length }}</td>
+                                <td class="text-center">{{ tool.data.outputs|length }}</td>
+                                <td class="text-center">
+                                    <span class="badge {{ 'bg-success' if tool.data.get('enabled', True) else 'bg-secondary' }}">
+                                        {{ 'Enabled' if tool.data.get('enabled', True) else 'Disabled' }}
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <a href="{{ url_for('ui.tool_details', tool_directory=tool.directory) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-info-circle me-1"></i>Details
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,26 @@
+rules:
+  - name: How to Fetch CVE Data
+    description: Provide the user with instructions for fetching CVE data.
+    tools: [howto.cve]
+    when: |
+      The user asks for instructions, documentation, or a guide on how to fetch or retrieve CVE data.
+    how: |
+      Call the `howto.cve` tool and present its output to the user.
+
+  - name: Fetch CVE Data
+    description: Fetch and correlate CVE data from VirusTotal and Mallory.
+    tools: [virustotal.query, mallory.query]
+    when: |
+      The user asks to fetch, retrieve, correlate, or analyze data for a CVE ID.
+    how: |
+      1. Use the `virustotal.query` tool with the CVE ID.
+      2. Use the `mallory.query` tool with the same CVE ID.
+      3. Compare and summarize both results.
+
+  - name: Scan URL
+    description: Scan or analyze a URL using urlscan.io.
+    tools: [urlscan.scan]
+    when: |
+      The user asks to scan or analyze a URL.
+    how: |
+      Use the `urlscan.scan` tool with the given URL and return the results. 

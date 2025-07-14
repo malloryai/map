@@ -1,0 +1,6 @@
+name: mallory-intel-server
+description: Modular MCP server for threat intelligence (Mallory AI, VirusTotal, URLScan.io)
+type: local
+path: servers/mallory-intel-server
+transport: stdio
+enabled: true

@@ -1,0 +1,456 @@
+name: test-server
+description: Updated from API test
+selected_tools:
+- server_name: mallory-intel-server
+  tool_name: howto_cve
+  config:
+    data:
+      description: Returns step-by-step instructions for fetching data for CVEs.
+      directory: servers/mallory-intel-server/tools/howto_cve
+      enabled: true
+      entry_point: entry_point
+      handlers:
+      - response_template: '# CVE Investigation Report: {cve_id}
+
+
+          Generated: {timestamp}
+
+
+          {sections}
+
+
+          ## Summary
+
+          This report combines intelligence from multiple sources for comprehensive
+          CVE analysis.
+
+          Use the findings above to assess threat level and plan remediation activities. '
+        tools:
+        - format: text
+          name: howto_cve
+          parameter_mapping: {}
+          section_header: '## Instructions'
+        - format: json_code_block
+          name: virustotal
+          parameter_mapping:
+            query: cve_id
+          section_header: '## VirusTotal Intelligence'
+        - format: json_code_block
+          name: mallory
+          parameter_mapping:
+            indicator: cve_id
+          section_header: '## Internal Intelligence (Mallory)'
+        type: multi_tool
+        uri_pattern: cve://report/{cve_id}
+        uri_prefix: cve://
+      inputs: []
+      module: tool.py
+      name: howto_cve
+      outputs:
+      - name: instructions
+        type: string
+      prompts:
+      - arguments:
+        - description: CVE identifier (e.g., CVE-2023-12345)
+          name: cve_id
+          required: false
+        description: Complete CVE investigation workflow using multiple tools
+        name: cve-investigation
+        template: "# CVE Investigation Workflow: {cve_id}\n\n## Step-by-step investigation\
+          \ process:\n\n### 1. Get Basic Instructions\n```\nhowto.cve()\n```\n\n###\
+          \ 2. Search External Intelligence\n```\nvirustotal.query(query=\"{cve_id}\"\
+          )\n```\n- Look for exploitation attempts\n- Check for related malware samples\n\
+          - Review vendor detections\n\n### 3. Check Internal Intelligence  \n```\n\
+          mallory.query(indicator=\"{cve_id}\")\n```\n- Past incidents in your environment\n\
+          - Internal risk assessments\n- Remediation status\n\n### 4. Investigate\
+          \ Related URLs (if applicable)\nIf the CVE involves web exploitation:\n\
+          ```\nurlscan.scan(url=\"https://exploit-site.com\")\n```\n\n### 5. Analysis\
+          \ Checklist:\n- [ ] CVSS score and severity\n- [ ] Affected systems in environment\n\
+          - [ ] Available patches/mitigations\n- [ ] Active exploitation evidence\n\
+          - [ ] Related threat campaigns\n- [ ] Remediation priority\n\n### 6. Documentation:\n\
+          - Compile findings from all sources\n- Create incident report if needed\n\
+          - Update threat intelligence database\n- Plan remediation activities\n\n\
+          **Start with**: howto.cve() for detailed instructions\n"
+      resource_templates:
+      - description: Complete CVE investigation report combining multiple sources
+        mimeType: text/markdown
+        name: CVE Investigation Report
+        uriTemplate: cve://report/{cve_id}
+    description: Returns step-by-step instructions for fetching data for CVEs.
+    inputSchema:
+      properties: {}
+      required: []
+      type: object
+    name: howto_cve
+- server_name: mallory-intel-server
+  tool_name: mallory
+  config:
+    data:
+      description: Query Mallory AI threat intelligence platform for comprehensive
+        security intelligence.
+      directory: servers/mallory-intel-server/tools/mallory
+      enabled: true
+      entry_point: mallory_query
+      handlers:
+      - metadata:
+          source: Mallory Internal Intelligence
+        parameter_mapping:
+          indicator: indicator
+        response_template: "{\n  \"source\": \"{source}\",\n  \"indicator\": \"{indicator}\"\
+          ,\n  \"timestamp\": \"{timestamp}\",\n  \"data\": {tool_result}\n} "
+        tool_name: mallory
+        type: single_tool
+        uri_pattern: mallory://intel/{indicator}
+        uri_prefix: mallory://
+      inputs:
+      - description: 'Action to perform: ''sources'', ''references'', ''vulnerability'',
+          ''exploits'''
+        name: action
+        required: true
+        type: string
+      - description: Search query for references, or CVE identifier for exploits.
+          Can be IOCs, keywords like 'ransomware', 'phishing', domains, IPs, etc.
+        name: indicator
+        required: false
+        type: string
+      - description: 'Source slug filter for references (format: source:[SLUG])'
+        name: source_filter
+        required: false
+        type: string
+      - description: 'Product/technology name for vulnerability search. Examples:
+          ''apache'', ''nginx'', ''windows'', ''linux'', ''mysql'', ''wordpress'',
+          ''chrome'', ''firefox''. Use the common/simplified name of the software
+          or system.'
+        name: product
+        required: false
+        type: string
+      - description: 'Vendor/publisher name for vulnerability search. Examples: ''apache'',
+          ''microsoft'', ''google'', ''oracle'', ''cisco'', ''redhat'', ''canonical''.
+          Use the organization that develops/maintains the product.'
+        name: vendor
+        required: false
+        type: string
+      - description: 'CPE 2.3 string for vulnerability search. Format: cpe:2.3:a:vendor:product:version:update:edition:language:sw_edition:target_sw:target_hw:other.
+          Example: ''cpe:2.3:a:apache:http_server:2.4.50'''
+        name: cpe
+        required: false
+        type: string
+      module: tool.py
+      name: mallory
+      outputs:
+      - name: intel
+        type: dict
+      prompts:
+      - description: Instructions for querying Mallory AI OSINT sources
+        name: mallory-sources
+        template: '# Mallory AI OSINT Sources Query
+
+
+          ## How to use mallory.query for sources:
+
+
+          ```
+
+          mallory.query(action="sources")
+
+          ```
+
+
+          **Purpose**: Enumerate all OSINT sources monitored by Mallory AI
+
+          **Returns**: Source configurations, reference counts, and monitoring options
+
+          '
+      - arguments:
+        - description: Search term or indicator to look for
+          name: search_term
+          required: false
+        - description: Source filter to apply
+          name: source_filter
+          required: false
+        description: Instructions for querying Mallory AI intelligence references
+        name: mallory-references
+        template: '# Mallory AI Intelligence References Query
+
+
+          ## How to use mallory.query for references:
+
+
+          **Search by keyword/term**:
+
+          ```
+
+          mallory.query(action="references", indicator="ransomware")
+
+          mallory.query(action="references", indicator="phishing")
+
+          mallory.query(action="references", indicator="malware")
+
+          ```
+
+
+          **Search by specific IOC**:
+
+          ```
+
+          mallory.query(action="references", indicator="malicious-domain.com")
+
+          mallory.query(action="references", indicator="192.168.1.100")
+
+          mallory.query(action="references", indicator="d41d8cd98f00b204e9800998ecf8427e")
+
+          ```
+
+
+          **Filter by specific source**:
+
+          ```
+
+          mallory.query(action="references", source_filter="source:twitter")
+
+          mallory.query(action="references", indicator="apt", source_filter="source:github")
+
+          ```
+
+
+          **General search (all references)**:
+
+          ```
+
+          mallory.query(action="references")
+
+          ```
+
+
+          **Purpose**: Search threat intelligence references using keywords, IOCs,
+          or source filters
+
+          **Note**: The ''indicator'' parameter accepts both specific IOCs and general
+          search terms
+
+          **Returns**: Intelligence data from monitored OSINT sources matching the
+          search criteria
+
+          '
+      - arguments:
+        - description: Product name to search
+          name: product
+          required: false
+        - description: Vendor name to search
+          name: vendor
+          required: false
+        description: Instructions for Mallory AI vulnerability inference
+        name: mallory-vulnerability
+        template: '# Mallory AI Vulnerability Inference
+
+
+          ## How to use mallory.query for vulnerability search:
+
+
+          **By product/vendor (recommended approach)**:
+
+          ```
+
+          mallory.query(action="vulnerability", product="apache", vendor="apache")
+
+          mallory.query(action="vulnerability", product="windows", vendor="microsoft")
+
+          mallory.query(action="vulnerability", product="mysql", vendor="oracle")
+
+          mallory.query(action="vulnerability", product="nginx", vendor="nginx")
+
+          mallory.query(action="vulnerability", product="wordpress", vendor="wordpress")
+
+          ```
+
+
+          **By CPE string (for precise matching)**:
+
+          ```
+
+          mallory.query(action="vulnerability", cpe="cpe:2.3:a:apache:http_server:2.4.50")
+
+          mallory.query(action="vulnerability", cpe="cpe:2.3:o:microsoft:windows_10:1909")
+
+          ```
+
+
+          **Common Product Examples**:
+
+          - **Web Servers**: apache, nginx, iis
+
+          - **Operating Systems**: windows, linux, ubuntu, centos, macos
+
+          - **Databases**: mysql, postgresql, mongodb, oracle
+
+          - **Applications**: wordpress, drupal, joomla, jenkins
+
+          - **Browsers**: chrome, firefox, safari, edge
+
+
+          **Common Vendor Examples**:
+
+          - **apache** (Apache Software Foundation)
+
+          - **microsoft** (Microsoft Corporation)
+
+          - **google** (Google LLC)
+
+          - **oracle** (Oracle Corporation)
+
+          - **cisco** (Cisco Systems)
+
+          - **redhat** (Red Hat Inc)
+
+
+          **Purpose**: Match software products to vulnerability database for inference
+
+          **Returns**: Product matches that can be used for vulnerability assessment
+
+          '
+      - arguments:
+        - description: CVE identifier
+          name: cve_id
+          required: false
+        description: Instructions for querying Mallory AI exploit intelligence
+        name: mallory-exploits
+        template: '# Mallory AI Exploit Intelligence
+
+
+          ## How to use mallory.query for exploits:
+
+
+          ```
+
+          mallory.query(action="exploits", indicator="CVE-2023-1234")
+
+          mallory.query(action="exploits", indicator="CVE-2024-5678")
+
+          ```
+
+
+          **Purpose**: Get exploit information for specific vulnerabilities
+
+          **Returns**: Exploit maturity, authors, disclosure dates, and URLs
+
+          '
+      resource_templates:
+      - description: List of all OSINT sources monitored by Mallory AI
+        mimeType: application/json
+        name: Mallory OSINT Sources
+        uriTemplate: mallory://sources
+      - description: Threat intelligence references for specific indicators or search
+          terms
+        mimeType: application/json
+        name: Mallory Intelligence References
+        uriTemplate: mallory://references/{indicator}
+      - description: Product vulnerability matching and inference
+        mimeType: application/json
+        name: Mallory Vulnerability Intelligence
+        uriTemplate: mallory://vulnerability/{product}
+      - description: Exploit information for CVE identifiers
+        mimeType: application/json
+        name: Mallory Exploit Intelligence
+        uriTemplate: mallory://exploits/{cve_id}
+    description: Query Mallory AI threat intelligence platform for comprehensive security
+      intelligence.
+    inputSchema:
+      properties:
+        action:
+          description: 'Action to perform: ''sources'', ''references'', ''vulnerability'',
+            ''exploits'''
+          type: string
+        cpe:
+          description: 'CPE 2.3 string for vulnerability search. Format: cpe:2.3:a:vendor:product:version:update:edition:language:sw_edition:target_sw:target_hw:other.
+            Example: ''cpe:2.3:a:apache:http_server:2.4.50'''
+          type: string
+        indicator:
+          description: Search query for references, or CVE identifier for exploits.
+            Can be IOCs, keywords like 'ransomware', 'phishing', domains, IPs, etc.
+          type: string
+        product:
+          description: 'Product/technology name for vulnerability search. Examples:
+            ''apache'', ''nginx'', ''windows'', ''linux'', ''mysql'', ''wordpress'',
+            ''chrome'', ''firefox''. Use the common/simplified name of the software
+            or system.'
+          type: string
+        source_filter:
+          description: 'Source slug filter for references (format: source:[SLUG])'
+          type: string
+        vendor:
+          description: 'Vendor/publisher name for vulnerability search. Examples:
+            ''apache'', ''microsoft'', ''google'', ''oracle'', ''cisco'', ''redhat'',
+            ''canonical''. Use the organization that develops/maintains the product.'
+          type: string
+      required:
+      - action
+      type: object
+    name: mallory
+- server_name: mallory-intel-server
+  tool_name: urlscan
+  config:
+    data:
+      description: Retrieve scan results from urlscan.io for a given domain or URL.
+      directory: servers/mallory-intel-server/tools/urlscan
+      enabled: true
+      entry_point: urlscan_scan
+      handlers:
+      - metadata:
+          source: URLScan.io
+        parameter_mapping:
+          url: url
+        response_template: "{\n  \"source\": \"{source}\",\n  \"url\": \"{url}\",\n\
+          \  \"timestamp\": \"{timestamp}\",\n  \"data\": {tool_result}\n} "
+        tool_name: urlscan
+        type: single_tool
+        uri_pattern: urlscan://scan/{url}
+        uri_prefix: urlscan://
+      inputs:
+      - name: url
+        required: true
+        type: string
+      module: tool.py
+      name: urlscan
+      outputs:
+      - name: scan_data
+        type: dict
+      prompts:
+      - arguments:
+        - description: URL to scan
+          name: url
+          required: false
+        description: Instructions for scanning URLs with URLScan.io
+        name: urlscan-howto
+        template: "# URLScan.io Web Analysis\n\n## How to use the urlscan.scan tool:\n\
+          \n1. **Prepare the URL**: {url}\n   - Ensure proper URL format (include\
+          \ https://)\n   - Be cautious with potentially malicious URLs\n\n2. **Execute\
+          \ the scan**:\n   ```\n   urlscan.scan(url=\"{url}\")\n   ```\n\n3. **Analyze\
+          \ scan results**:\n   - Screenshot and DOM analysis\n   - Network requests\
+          \ and redirects\n   - JavaScript behavior\n   - Detected technologies\n\
+          \   - Security indicators\n\n4. **Investigation points**:\n   - Check for\
+          \ suspicious redirects\n   - Review loaded resources\n   - Analyze JavaScript\
+          \ for malicious code\n   - Look for phishing indicators\n\n**Example**:\
+          \ urlscan.scan(url=\"{url}\")\n"
+      resource_templates:
+      - description: URLScan.io analysis report for any URL
+        mimeType: application/json
+        name: URLScan Analysis Report
+        uriTemplate: urlscan://scan/{url}
+    description: Retrieve scan results from urlscan.io for a given domain or URL.
+    inputSchema:
+      properties:
+        url:
+          type: string
+      required:
+      - url
+      type: object
+    name: urlscan
+rules: []
+created_at: '2025-07-07T19:38:16.126595'
+updated_at: '2025-07-14T03:16:56.493435'
+enabled: true
+port: null
+status: ready
+api_key: null
+selected_prompts:
+- security-analyst

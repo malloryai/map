@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Registry Dashboard - Mallory Automation Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+
+    <!-- Header -->
+    <div class="row mb-4 align-items-center">
+        <div class="col">
+            <h1 class="h2 mb-0"><strong>Registry Dashboard</strong></h1>
+            <p class="mb-0 text-muted">Discover and manage all available MCP server entries</p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('ui.create_server') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i>Create Virtual Server
+            </a>
+        </div>
+    </div>
+    
+    <!-- Stats -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <h2 class="h1 text-primary">{{ total_registry_entries }}</h2>
+                    <p class="mb-0">Total Registry Entries</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <h2 class="h1 text-success">{{ server_count }}</h2>
+                    <p class="mb-0">Configured Virtual Servers</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Registry Entries -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">
+                        <i class="bi bi-hdd-network me-2"></i>Discovered Entries
+                    </h4>
+                </div>
+                <div class="card-body">
+                    {% if registry_entries %}
+                        <div class="row">
+                            {% for entry in registry_entries %}
+                            <div class="col-md-6 col-lg-4 mb-4">
+                                <div class="card h-100 virtual-server-card">
+                                    <div class="card-body">
+                                        <h5 class="card-title d-flex justify-content-between">
+                                            <span>
+                                                <i class="bi bi-server me-2"></i>{{ entry.name }}
+                                            </span>
+                                            <span class="badge {{ 'bg-success' if entry.status == 'discovered' else 'bg-secondary' }}">
+                                                {{ entry.status }}
+                                            </span>
+                                        </h5>
+                                        <p class="card-text text-secondary">{{ entry.description | truncate(80) }}</p>
+                                        
+                                        <div class="d-flex justify-content-between text-sm text-muted border-top pt-3 mt-3">
+                                            <span><i class="bi bi-tools me-1"></i> {{ entry.tools|length }} tools</span>
+                                            <span><i class="bi bi-hdd me-1"></i> {{ entry.transport }}</span>
+                                            <span><i class="bi bi-compass me-1"></i> {{ entry.discovery_method }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="card-footer bg-light d-flex justify-content-end gap-2">
+                                        <a href="{{ url_for('ui.registry_entry_details', server_name=entry.name) }}" class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-info-circle me-1"></i>Details
+                                        </a>
+                                        <a href="{{ url_for('ui.create_server_with_preselection', server_name=entry.name) }}" class="btn btn-sm btn-primary">
+                                            <i class="bi bi-plus-circle me-1"></i>Use Tools
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-search display-4 text-muted mb-3"></i>
+                            <h5 class="text-muted">No Registry Entries Found</h5>
+                            <p class="text-muted">
+                                Add server configurations to the <code>registry/</code> directory to discover them.
+                            </p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

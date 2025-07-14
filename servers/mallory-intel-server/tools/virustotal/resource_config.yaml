@@ -1,0 +1,16 @@
+handlers:
+  - uri_prefix: "virustotal://"
+    uri_pattern: "virustotal://query/{indicator}"
+    type: "single_tool"
+    tool_name: "virustotal"
+    parameter_mapping:
+      query: "indicator"
+    metadata:
+      source: "VirusTotal"
+    response_template: |
+      {
+        "source": "{source}",
+        "indicator": "{indicator}",
+        "timestamp": "{timestamp}",
+        "data": {tool_result}
+      } 

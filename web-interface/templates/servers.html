@@ -1,0 +1,479 @@
+{% extends "base.html" %}
+
+{% block title %}Virtual Servers - Mallory Automation Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <!-- Header -->
+    <div class="row mb-4 align-items-center">
+        <div class="col">
+            <h1 class="h2 mb-0"><strong>Virtual Servers</strong></h1>
+            <p class="mb-0 text-muted">Manage your custom, composed MCP servers</p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-outline-secondary" onclick="refreshVirtualServers()">
+                <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+            </button>
+            <a href="{{ url_for('ui.create_server') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i>Create Server
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <h2 class="h1 text-primary">{{ virtual_servers|length }}</h2>
+                    <p class="mb-0">Total Servers</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <h2 class="h1 text-success">{{ virtual_servers|selectattr('enabled')|list|length }}</h2>
+                    <p class="mb-0">Enabled</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <h2 class="h1 text-danger">{{ virtual_servers|rejectattr('enabled')|list|length }}</h2>
+                    <p class="mb-0">Disabled</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row" id="servers-container">
+    {% for virtual_server in virtual_servers %}
+    <div class="col-lg-6 col-xl-4 mb-4">
+        <div class="card virtual-server-card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-collection me-2"></i>{{ virtual_server.name }}
+                </h5>
+                <div>
+                    {% if virtual_server.enabled %}
+                        <span class="badge bg-success">
+                            <i class="bi bi-check-circle me-1"></i>Enabled
+                        </span>
+                    {% else %}
+                        <span class="badge bg-danger">
+                            <i class="bi bi-x-circle me-1"></i>Disabled
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="card-text text-secondary">{{ virtual_server.description or 'No description provided' }}</p>
+                
+                <div class="row text-center mb-3">
+                    <div class="col-4">
+                        <small class="text-muted">Tools</small>
+                        <div class="fw-bold">{{ virtual_server.selected_tools|length }}</div>
+                    </div>
+                    <div class="col-4">
+                        <small class="text-muted">Created</small>
+                        <div class="fw-bold">{{ virtual_server.created_at[:10] }}</div>
+                    </div>
+                    <div class="col-4">
+                        <small class="text-muted">Updated</small>
+                        <div class="fw-bold">{{ virtual_server.updated_at[:10] }}</div>
+                    </div>
+                </div>
+                
+                {% if virtual_server.selected_tools %}
+                <div>
+                    <small class="text-muted d-block mb-2">Selected Tools:</small>
+                    <div>
+                        {% for tool in virtual_server.selected_tools[:4] %}
+                            <span class="badge bg-primary me-1 mb-1">{{ tool.tool_name }}</span>
+                        {% endfor %}
+                        {% if virtual_server.selected_tools|length > 4 %}
+                            <span class="badge bg-secondary">+{{ virtual_server.selected_tools|length - 4 }} more</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="{{ url_for('ui.server_details', server_name=virtual_server.name) }}" 
+                       class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-info-circle me-1"></i>Details
+                    </a>
+                    
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-secondary" 
+                                onclick="copyProxyUrl('{{ virtual_server.name }}')">
+                            <i class="bi bi-link-45deg"></i>
+                        </button>
+                        
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-secondary dropdown-toggle" 
+                                    data-bs-toggle="dropdown">
+                                <i class="bi bi-three-dots"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" 
+                                       href="{{ url_for('ui.edit_server', server_name=virtual_server.name) }}">
+                                        <i class="bi bi-pencil me-2"></i>Edit
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#" 
+                                       onclick="cloneVirtualServer('{{ virtual_server.name }}')">
+                                        <i class="bi bi-files me-2"></i>Clone
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#" 
+                                       onclick="exportVirtualServer('{{ virtual_server.name }}')">
+                                        <i class="bi bi-download me-2"></i>Export
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item text-danger" href="#" 
+                                       onclick="deleteVirtualServer('{{ virtual_server.name }}')">
+                                        <i class="bi bi-trash me-2"></i>Delete
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    
+    <!-- Create New Virtual Server Card -->
+    <div class="col-lg-6 col-xl-4 mb-4">
+        <a href="{{ url_for('ui.create_server') }}" class="card h-100 border-2 border-dashed text-decoration-none d-flex justify-content-center align-items-center">
+            <div class="card-body text-center">
+                <i class="bi bi-plus-circle display-4 text-secondary mb-3"></i>
+                <h5 class="card-title text-primary">Create New Server</h5>
+                <p class="card-text text-secondary">Compose a new server with tools from the registry.</p>
+            </div>
+        </a>
+    </div>
+</div>
+
+{% if not virtual_servers %}
+<div class="row">
+    <div class="col-12 text-center py-5">
+        <div class="card-body">
+            <i class="bi bi-info-circle display-4 text-muted mb-3"></i>
+            <h5 class="text-muted">No servers yet!</h5>
+            <p class="text-muted">Create your first server by selecting tools from the registry.</p>
+            <a href="{{ url_for('ui.create_server') }}" class="btn btn-primary mt-3">
+                <i class="bi bi-plus-circle me-1"></i>Create Your First Server
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Clone Virtual Server Modal -->
+<div class="modal fade" id="cloneModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Clone Virtual Server</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="cloneForm">
+                    <div class="mb-3">
+                        <label for="cloneName" class="form-label">New Server Name</label>
+                        <input type="text" class="form-control" id="cloneName" required>
+                        <div class="form-text">Use lowercase letters, numbers, and hyphens only</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="cloneDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="cloneDescription" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="performClone()">
+                    <i class="bi bi-files me-1"></i>Clone Server
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Elevate card z-index when dropdown is open to prevent it being hidden by other cards
+    const cards = document.querySelectorAll('.virtual-server-card');
+    cards.forEach(card => {
+        const dropdown = card.querySelector('.dropdown-toggle');
+        if (dropdown) {
+            dropdown.addEventListener('show.bs.dropdown', () => {
+                card.classList.add('dropdown-is-open');
+            });
+            dropdown.addEventListener('hide.bs.dropdown', () => {
+                card.classList.remove('dropdown-is-open');
+            });
+        }
+    });
+});
+
+let currentCloneSource = null;
+
+async function refreshVirtualServers() {
+    const button = document.querySelector('button[onclick="refreshVirtualServers()"]');
+    const originalText = button.innerHTML;
+    
+    button.disabled = true;
+    button.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i>Refreshing...';
+    
+    try {
+        // Just reload the page for now
+        setTimeout(() => {
+            window.location.reload();
+        }, 500);
+    } catch (error) {
+        console.error('Error refreshing virtual servers:', error);
+        button.disabled = false;
+        button.innerHTML = originalText;
+    }
+}
+
+function copyProxyUrl(serverName) {
+    const baseUrl = window.location.origin;
+    const proxyUrl = `${baseUrl}/mcp/${serverName}`;
+    
+    copyTextToClipboard(proxyUrl, `MCP Streamable URL copied: ${proxyUrl}`);
+    
+    // Also show usage examples
+    setTimeout(() => {
+        showToast(`<b>Usage Examples</b><br>
+            <b>MCP Streamable:</b> ${proxyUrl}<br>
+            <b>MCP Standard:</b> ${baseUrl}/mcp/${serverName}<br>
+            <b>Web API:</b> ${baseUrl}/api/servers/${serverName}`, 'info');
+    }, 1000);
+}
+
+function copyTextToClipboard(text, successMessage) {
+    // Try modern clipboard API first
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+            showToast(successMessage, 'success');
+        }).catch(err => {
+            console.error('Clipboard API failed:', err);
+            fallbackCopyTextToClipboard(text, successMessage);
+        });
+    } else {
+        // Fallback for older browsers or insecure contexts
+        fallbackCopyTextToClipboard(text, successMessage);
+    }
+}
+
+function fallbackCopyTextToClipboard(text, successMessage) {
+    // Create a temporary textarea element
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    
+    // Make it invisible
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            showToast(successMessage, 'success');
+        } else {
+            showToast('Failed to copy to clipboard', 'error');
+        }
+    } catch (err) {
+        console.error('Fallback copy failed:', err);
+        showToast('Copy to clipboard not supported', 'error');
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+async function deleteVirtualServer(serverName) {
+    if (!confirm(`Are you sure you want to delete virtual server "${serverName}"?\n\nThis action cannot be undone.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/servers/${serverName}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast(result.message, 'success');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            throw new Error(result.error || 'Unknown error');
+        }
+    } catch (error) {
+        console.error('Error deleting virtual server:', error);
+        showToast(`Failed to delete virtual server: ${error.message}`, 'error');
+    }
+}
+
+async function cloneVirtualServer(serverName) {
+    currentCloneSource = serverName;
+    
+    // Pre-fill the form
+    document.getElementById('cloneName').value = `${serverName}-copy`;
+    document.getElementById('cloneDescription').value = `Copy of ${serverName}`;
+    
+    const modal = new bootstrap.Modal(document.getElementById('cloneModal'));
+    modal.show();
+}
+
+async function performClone() {
+    const newName = document.getElementById('cloneName').value.trim();
+    const newDescription = document.getElementById('cloneDescription').value.trim();
+    
+    if (!newName || !currentCloneSource) {
+        showToast('Please enter a valid server name', 'warning');
+        return;
+    }
+    
+    try {
+        // First, get the original virtual server
+        const response = await fetch(`/api/servers`);
+        const virtualServers = await response.json();
+        const sourceServer = virtualServers.find(vs => vs.name === currentCloneSource);
+        
+        if (!sourceServer) {
+            throw new Error('Source server not found');
+        }
+        
+        // Create the clone
+        const cloneResponse = await fetch('/api/servers', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                name: newName,
+                description: newDescription,
+                selected_tools: sourceServer.selected_tools
+            })
+        });
+        
+        const result = await cloneResponse.json();
+        
+        if (result.success) {
+            showToast(`Virtual server ${newName} cloned successfully`, 'success');
+            
+            const modal = bootstrap.Modal.getInstance(document.getElementById('cloneModal'));
+            modal.hide();
+            
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            throw new Error(result.error || 'Unknown error');
+        }
+    } catch (error) {
+        console.error('Error cloning virtual server:', error);
+        showToast(`Failed to clone virtual server: ${error.message}`, 'error');
+    }
+}
+
+async function exportVirtualServer(serverName) {
+    try {
+        const response = await fetch(`/api/servers`);
+        const virtualServers = await response.json();
+        const server = virtualServers.find(vs => vs.name === serverName);
+        
+        if (!server) {
+            throw new Error('Virtual server not found');
+        }
+        
+        // Create export data
+        const exportData = {
+            name: server.name,
+            description: server.description,
+            selected_tools: server.selected_tools,
+            exported_at: new Date().toISOString(),
+            export_version: '1.0'
+        };
+        
+        // Download as JSON file
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${serverName}-export.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showToast(`Virtual server ${serverName} exported successfully`, 'success');
+        
+    } catch (error) {
+        console.error('Error exporting virtual server:', error);
+        showToast(`Failed to export virtual server: ${error.message}`, 'error');
+    }
+}
+
+function showToast(message, type) {
+    let toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+        toastContainer.style.zIndex = '11';
+        document.body.appendChild(toastContainer);
+    }
+    
+    const toastId = 'toast-' + Date.now();
+    const bgClass = type === 'success' ? 'bg-success' : type === 'error' ? 'bg-danger' : 'bg-info';
+    const icon = type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle';
+    
+    const toastHTML = `
+        <div id="${toastId}" class="toast ${bgClass} text-white" role="alert">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi bi-${icon} me-2"></i>${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    `;
+    
+    toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+    
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement, { delay: 4000 });
+    toast.show();
+    
+    toastElement.addEventListener('hidden.bs.toast', () => {
+        toastElement.remove();
+    });
+}
+</script>
+{% endblock %} 

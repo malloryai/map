@@ -1,0 +1,656 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Virtual Server - {{ server.name }} - MCP Configurator{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="{{ url_for('ui.servers_list') }}">
+                        <i class="bi bi-collection me-1"></i>Virtual Servers
+                    </a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="{{ url_for('ui.server_details', server_name=server.name) }}">
+                        {{ server.name }}
+                    </a>
+                </li>
+                <li class="breadcrumb-item active">Edit</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                                    <h2 class="card-title mb-0">
+                        <i class="bi bi-pencil-square me-2"></i>Edit Virtual Server: {{ server.name }}
+                    </h2>
+            </div>
+            <div class="card-body">
+                <form id="editVirtualServerForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="serverName" class="form-label">Server Name</label>
+                            <input type="text" class="form-control" id="serverName" 
+                                   value="{{ server.name }}" readonly>
+                            <div class="form-text">Server name cannot be changed after creation</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="serverDescription" class="form-label">Description</label>
+                            <input type="text" class="form-control" id="serverDescription" 
+                                   value="{{ server.description }}"
+                                   placeholder="Brief description of this virtual server">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="serverEnabled" class="form-label">Status</label>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="serverEnabled" 
+                                       {% if server.enabled %}checked{% endif %}>
+                                <label class="form-check-label" for="serverEnabled">
+                                    Server Enabled
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Server Information</label>
+                            <div class="text-muted">
+                                <small>Created: {{ server.created_at[:19] }}</small><br>
+                                <small>Updated: {{ server.updated_at[:19] }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Prompt Selection -->
+<div class="row mb-4">
+    <div class="col-12">
+        {% include "servers/_prompt_selection.html" %}
+    </div>
+</div>
+
+<div class="row">
+    <!-- Available Tools -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="card-title mb-0">
+                    <i class="bi bi-collection me-2"></i>Available Tools
+                </h4>
+                <div class="input-group" style="width: 300px;">
+                    <span class="input-group-text">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" class="form-control" id="toolSearch" 
+                           placeholder="Search tools...">
+                </div>
+            </div>
+            <div class="card-body" style="max-height: 600px; overflow-y: auto;">
+                <div id="availableTools">
+                    {% for server in servers %}
+                    {% if server.tools %}
+                    <div class="server-section mb-4">
+                        <h5 class="text-muted mb-3">
+                            <i class="bi bi-server me-1"></i>{{ server.name }}
+                            <span class="badge bg-secondary ms-2">{{ server.tools|length }} tools</span>
+                        </h5>
+                        
+                        <div class="row">
+                            {% for tool in server.tools %}
+                            <div class="col-12 mb-2">
+                                <div class="card tool-item border-start border-3 border-primary" 
+                                     draggable="true" 
+                                     data-server="{{ server.name }}" 
+                                     data-tool="{{ tool.name }}"
+                                     data-config='{{ tool|tojson }}'>
+                                    <div class="card-body py-2">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="card-title mb-1">
+                                                    <i class="bi bi-tool me-1"></i>{{ tool.name }}
+                                                </h6>
+                                                <p class="card-text small text-muted mb-1">
+                                                    {{ tool.description[:100] }}{% if tool.description|length > 100 %}...{% endif %}
+                                                </p>
+                                                <div class="d-flex gap-2">
+                                                    <span class="badge bg-light text-dark">
+                                                        {{ tool.inputs|length }} inputs
+                                                    </span>
+                                                    {% if tool.prompts|length > 0 %}
+                                                    <span class="badge bg-info">
+                                                        {{ tool.prompts|length }} prompts
+                                                    </span>
+                                                    {% endif %}
+                                                    {% if tool.resources|length > 0 %}
+                                                    <span class="badge bg-success">
+                                                        {{ tool.resources|length }} resources
+                                                    </span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="text-end">
+                                                <button class="btn btn-sm btn-outline-primary add-tool-btn" 
+                                                        data-server="{{ server.name }}" 
+                                                        data-tool="{{ tool.name }}"
+                                                        data-config='{{ tool|tojson }}'>
+                                                    <i class="bi bi-plus"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+                
+                {% if not servers or not servers|selectattr('tools')|list %}
+                <div class="text-center text-muted py-5">
+                    <i class="bi bi-info-circle display-4 mb-3"></i>
+                    <h5>No tools available</h5>
+                    <p>Discover servers first to see available tools</p>
+                    <a href="{{ url_for('ui.registry_dashboard') }}" class="btn btn-primary">
+                        <i class="bi bi-server me-1"></i>Go to Servers
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Selected Tools -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="card-title mb-0">
+                    <i class="bi bi-check-circle me-2"></i>Selected Tools
+                </h4>
+                <div>
+                    <span class="badge bg-primary" id="selectedCount">{{ server.selected_tools|length }}</span>
+                    <button class="btn btn-sm btn-outline-danger ms-2" onclick="clearSelected()">
+                        <i class="bi bi-trash"></i> Clear All
+                    </button>
+                </div>
+            </div>
+            <div class="card-body" style="max-height: 600px; overflow-y: auto;">
+                <div id="selectedTools" class="drop-zone">
+                    <!-- Tools will be populated by JavaScript -->
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <small class="text-muted">Tools selected: <span id="toolCount">{{ server.selected_tools|length }}</span></small>
+                    </div>
+                    <div>
+                        <button class="btn btn-secondary me-2" onclick="previewVirtualServer()">
+                            <i class="bi bi-eye me-1"></i>Preview
+                        </button>
+                        <button class="btn btn-success" onclick="updateVirtualServer()" id="updateBtn">
+                            <i class="bi bi-check-circle me-1"></i>Update Server
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Virtual Server Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="previewContent">
+                    <!-- Preview content will be generated here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" onclick="updateVirtualServer()">
+                    <i class="bi bi-check-circle me-1"></i>Update Server
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let selectedTools = {{ server.selected_tools|tojson|safe }};
+const serverName = "{{ server.name }}";
+
+// Initialize drag and drop
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing edit mode...');
+    console.log('Initial selected tools:', selectedTools);
+    
+    // Initialize drop zone
+    initializeDropZone();
+    
+    // Initialize tool items
+    initializeToolItems();
+    
+    // Update display with existing tools
+    updateSelectedToolsDisplay();
+    updateToolCount();
+    
+    // Search functionality
+    document.getElementById('toolSearch').addEventListener('input', filterTools);
+    
+    // Form validation
+    document.getElementById('serverDescription').addEventListener('input', validateForm);
+    document.getElementById('serverEnabled').addEventListener('change', validateForm);
+});
+
+function initializeDropZone() {
+    const dropZone = document.getElementById('selectedTools');
+    console.log('Initializing drop zone:', dropZone);
+    
+    if (!dropZone) {
+        console.error('Drop zone not found!');
+        return;
+    }
+    
+    // Add drop event listeners to drop zone
+    dropZone.addEventListener('dragover', handleDragOver);
+    dropZone.addEventListener('drop', handleDrop);
+    dropZone.addEventListener('dragenter', handleDragEnter);
+    dropZone.addEventListener('dragleave', handleDragLeave);
+}
+
+function initializeToolItems() {
+    const toolItems = document.querySelectorAll('.tool-item');
+    console.log('Found tool items:', toolItems.length);
+    
+    // Add drag event listeners to tools
+    toolItems.forEach(item => {
+        item.addEventListener('dragstart', handleDragStart);
+        item.addEventListener('dragend', handleDragEnd);
+    });
+    
+    // Add event listeners for add buttons
+    document.querySelectorAll('.add-tool-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            console.log('Add button clicked');
+            const serverName = this.dataset.server;
+            const toolName = this.dataset.tool;
+            const config = JSON.parse(this.dataset.config);
+            addTool(serverName, toolName, config);
+        });
+    });
+}
+
+function handleDragStart(e) {
+    console.log('Drag start:', this.dataset);
+    try {
+        const dragData = {
+            server: this.dataset.server,
+            tool: this.dataset.tool,
+            config: JSON.parse(this.dataset.config)
+        };
+        e.dataTransfer.setData('text/plain', JSON.stringify(dragData));
+        this.classList.add('dragging');
+    } catch (error) {
+        console.error('Error in handleDragStart:', error);
+    }
+}
+
+function handleDragEnd(e) {
+    this.classList.remove('dragging');
+}
+
+function handleDragOver(e) {
+    e.preventDefault();
+}
+
+function handleDragEnter(e) {
+    e.preventDefault();
+    this.classList.add('drag-over');
+}
+
+function handleDragLeave(e) {
+    this.classList.remove('drag-over');
+}
+
+function handleDrop(e) {
+    console.log('Drop event:', e);
+    e.preventDefault();
+    this.classList.remove('drag-over');
+    
+    try {
+        const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+        console.log('Dropped data:', data);
+        addTool(data.server, data.tool, data.config);
+    } catch (error) {
+        console.error('Error in handleDrop:', error);
+    }
+}
+
+function addTool(serverName, toolName, config) {
+    console.log('addTool called with:', { serverName, toolName, config });
+    
+    // Check if tool already selected
+    const existing = selectedTools.find(t => t.server_name === serverName && t.tool_name === toolName);
+    if (existing) {
+        showToast(`Tool ${toolName} is already selected`, 'warning');
+        return;
+    }
+    
+    // Add to selected tools
+    selectedTools.push({
+        server_name: serverName,
+        tool_name: toolName,
+        config: config
+    });
+    
+    console.log('Tool added, selectedTools:', selectedTools);
+    
+    updateSelectedToolsDisplay();
+    updateToolCount();
+    validateForm();
+    
+    showToast(`Added ${toolName} from ${serverName}`, 'success');
+}
+
+function removeTool(serverName, toolName) {
+    selectedTools = selectedTools.filter(t => !(t.server_name === serverName && t.tool_name === toolName));
+    updateSelectedToolsDisplay();
+    updateToolCount();
+    validateForm();
+    
+    showToast(`Removed ${toolName}`, 'info');
+}
+
+function clearSelected() {
+    selectedTools = [];
+    updateSelectedToolsDisplay();
+    updateToolCount();
+    validateForm();
+    
+    showToast('Cleared all selected tools', 'info');
+}
+
+function updateSelectedToolsDisplay() {
+    const container = document.getElementById('selectedTools');
+    
+    if (selectedTools.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-muted py-5">
+                <i class="bi bi-collection display-4 mb-3"></i>
+                <h5>No tools selected</h5>
+                <p>Drag tools from the left panel or click the + button to add them</p>
+            </div>
+        `;
+        container.className = 'drop-zone border-2 border-dashed rounded p-3 text-center text-muted';
+    } else {
+        container.className = 'drop-zone';
+        container.innerHTML = selectedTools.map(tool => `
+            <div class="card mb-2 border-start border-3 border-success">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="card-title mb-1">
+                                <i class="bi bi-tool me-1"></i>${tool.tool_name}
+                                <span class="badge bg-secondary ms-2">${tool.server_name}</span>
+                            </h6>
+                            <p class="card-text small text-muted mb-1">
+                                ${tool.config.description || 'No description'}
+                            </p>
+                            <div class="d-flex gap-2">
+                                <span class="badge bg-light text-dark">
+                                    ${tool.config.inputs ? tool.config.inputs.length : 0} inputs
+                                </span>
+                                ${tool.config.prompts > 0 ? `<span class="badge bg-info">${tool.config.prompts} prompts</span>` : ''}
+                                ${tool.config.resources > 0 ? `<span class="badge bg-success">${tool.config.resources} resources</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <button class="btn btn-sm btn-outline-danger" 
+                                    onclick="removeTool('${tool.server_name}', '${tool.tool_name}')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    // Re-initialize drop zone after content update
+    initializeDropZone();
+}
+
+function updateToolCount() {
+    const count = selectedTools.length;
+    document.getElementById('selectedCount').textContent = count;
+    document.getElementById('toolCount').textContent = count;
+}
+
+function filterTools() {
+    const searchTerm = document.getElementById('toolSearch').value.toLowerCase();
+    const toolItems = document.querySelectorAll('.tool-item');
+    
+    toolItems.forEach(item => {
+        const toolName = item.dataset.tool.toLowerCase();
+        const serverName = item.dataset.server.toLowerCase();
+        const config = JSON.parse(item.dataset.config);
+        const description = (config.description || '').toLowerCase();
+        
+        const matches = toolName.includes(searchTerm) || 
+                       serverName.includes(searchTerm) || 
+                       description.includes(searchTerm);
+        
+        item.style.display = matches ? 'block' : 'none';
+    });
+}
+
+function validateForm() {
+    const hasTools = selectedTools.length > 0;
+    const updateBtn = document.getElementById('updateBtn');
+    updateBtn.disabled = !hasTools;
+}
+
+function previewVirtualServer() {
+    const serverDescription = document.getElementById('serverDescription').value.trim();
+    const serverEnabled = document.getElementById('serverEnabled').checked;
+    
+    if (selectedTools.length === 0) {
+        showToast('Please select at least one tool', 'warning');
+        return;
+    }
+    
+    const previewContent = document.getElementById('previewContent');
+    previewContent.innerHTML = `
+        <div class="mb-4">
+            <h4>${serverName}</h4>
+            <p class="text-muted">${serverDescription || 'No description provided'}</p>
+            <div class="mb-2">
+                <span class="badge ${serverEnabled ? 'bg-success' : 'bg-secondary'}">
+                    ${serverEnabled ? 'Enabled' : 'Disabled'}
+                </span>
+            </div>
+        </div>
+        
+        <div class="mb-4">
+            <h5>Selected Tools (${selectedTools.length})</h5>
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Tool</th>
+                            <th>Server</th>
+                            <th>Inputs</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${selectedTools.map(tool => `
+                            <tr>
+                                <td><code>${tool.tool_name}</code></td>
+                                <td><span class="badge bg-secondary">${tool.server_name}</span></td>
+                                <td>${tool.config.inputs ? tool.config.inputs.length : 0}</td>
+                                <td>${tool.config.description || 'No description'}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i>
+            <strong>Changes:</strong> This will update the virtual server configuration and 
+            regenerate the Python script with the new tool selection.
+        </div>
+    `;
+    
+    const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+    modal.show();
+}
+
+async function updateVirtualServer() {
+    // Gather data from the form
+    const serverDescription = document.getElementById('serverDescription').value;
+    const serverEnabled = document.getElementById('serverEnabled').checked;
+    
+    // The 'selectedTools' global variable is already up-to-date.
+    // No need to re-read from the DOM.
+
+    const selectedPromptNodes = document.querySelectorAll('input[name="selected_prompts"]:checked');
+    const selectedPrompts = Array.from(selectedPromptNodes).map(node => node.value);
+
+    // Call API to update virtual server
+    try {
+        const response = await fetch(`/api/servers/${serverName}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                description: serverDescription,
+                enabled: serverEnabled,
+                selected_tools: selectedTools,
+                selected_prompts: selectedPrompts
+            })
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast(result.message, 'success');
+            
+            // Close preview modal if open
+            const previewModal = bootstrap.Modal.getInstance(document.getElementById('previewModal'));
+            if (previewModal) {
+                previewModal.hide();
+            }
+            
+            // Redirect to virtual server details
+            setTimeout(() => {
+                window.location.href = `/servers/${serverName}`;
+            }, 1500);
+        } else {
+            throw new Error(result.error || 'Unknown error');
+        }
+    } catch (error) {
+        console.error('Error updating virtual server:', error);
+        showToast(`Failed to update virtual server: ${error.message}`, 'error');
+        updateBtn.disabled = false;
+        updateBtn.innerHTML = originalText;
+    }
+}
+
+function showToast(message, type) {
+    let toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+        toastContainer.style.zIndex = '11';
+        document.body.appendChild(toastContainer);
+    }
+    
+    const toastId = 'toast-' + Date.now();
+    const bgClass = type === 'success' ? 'bg-success' : type === 'error' ? 'bg-danger' : 'bg-warning';
+    const icon = type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'exclamation-triangle';
+    
+    const toastHTML = `
+        <div id="${toastId}" class="toast ${bgClass} text-white" role="alert">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi bi-${icon} me-2"></i>${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    `;
+    
+    toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+    
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement, { delay: 4000 });
+    toast.show();
+    
+    toastElement.addEventListener('hidden.bs.toast', () => {
+        toastElement.remove();
+    });
+}
+</script>
+
+<style>
+.tool-item {
+    cursor: grab;
+    transition: all 0.2s ease;
+}
+
+.tool-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.tool-item.dragging {
+    opacity: 0.5;
+    transform: rotate(5deg);
+}
+
+.drop-zone {
+    min-height: 200px;
+    transition: all 0.3s ease;
+}
+
+.drop-zone.drag-over {
+    background-color: #e3f2fd;
+    border-color: #2196f3 !important;
+}
+
+.server-section {
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 1rem;
+}
+
+.server-section:last-child {
+    border-bottom: none;
+}
+
+#toolSearch {
+    border-left: none;
+}
+</style>
+{% endblock %} 

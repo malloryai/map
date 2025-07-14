@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Edit: {{ prompt.name }} - Mallory Automation Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2 mb-0"><strong>Edit Prompt:</strong> {{ prompt.name }}</h1>
+            <p class="mb-0 text-muted">Modify an existing prompt template.</p>
+        </div>
+    </div>
+
+    <form action="{{ url_for('prompts.edit_prompt', prompt_id=prompt.id) }}" method="POST">
+        {% set submit_button_text = 'Save Changes' %}
+        {% include "prompts/_form.html" %}
+    </form>
+
+</div>
+{% endblock %} 

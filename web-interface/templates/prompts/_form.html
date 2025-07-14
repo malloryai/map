@@ -1,0 +1,88 @@
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <!-- Prompt Name -->
+                <div class="mb-3">
+                    <label for="name" class="form-label">Prompt Name</label>
+                    <input type="text" class="form-control" id="name" name="name" value="{{ form_data.get('name', '') }}" required>
+                    <div class="form-text">A short, descriptive name for this prompt. This will also determine its unique ID.</div>
+                </div>
+
+                <!-- Description -->
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea class="form-control" id="description" name="description" rows="2">{{ form_data.get('description', '') }}</textarea>
+                    <div class="form-text">A brief explanation of what this prompt does. It will be shown in the tool selection UI.</div>
+                </div>
+
+                <!-- Category -->
+                <div class="mb-3">
+                    <label for="category" class="form-label">Category</label>
+                    <input type="text" class="form-control" id="category" name="category" value="{{ form_data.get('category', 'default') }}">
+                    <div class="form-text">A category to help organize your prompts (e.g., "code-generation", "text-analysis").</div>
+                </div>
+                
+                <!-- Prompt Template -->
+                <div class="mb-4">
+                    <label for="prompt_template" class="form-label">Prompt Template</label>
+                    <textarea class="form-control font-mono" id="prompt_template" name="prompt_template" rows="12">{{ form_data.get('prompt_template', '') }}</textarea>
+                    <div class="form-text">The full template of your prompt. Use <code>{% raw %}{{variable_name}}{% endraw %}</code> syntax for inputs.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Detected Inputs</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-secondary small">These are the variables detected from your template. They will become the inputs for this tool.</p>
+                <div id="variable-list">
+                    <span class="badge bg-light text-dark">No variables detected yet.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <button type="submit" class="btn btn-primary">{{ submit_button_text }}</button>
+    <a href="{{ url_for('prompts.list_prompts') }}" class="btn btn-outline-secondary">Cancel</a>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const templateTextarea = document.getElementById('prompt_template');
+    const variableList = document.getElementById('variable-list');
+
+    function updateVariableList() {
+        const text = templateTextarea.value;
+        const variables = [...text.matchAll(/\{\{([a-zA-Z0-9_]+)\}\}/g)].map(match => match[1]);
+        const uniqueVariables = [...new Set(variables)].sort();
+
+        variableList.innerHTML = ''; // Clear current list
+
+        if (uniqueVariables.length > 0) {
+            uniqueVariables.forEach(variable => {
+                const badge = document.createElement('span');
+                badge.className = 'badge bg-primary me-1 mb-1';
+                badge.textContent = variable;
+                variableList.appendChild(badge);
+            });
+        } else {
+            const noVarBadge = document.createElement('span');
+            noVarBadge.className = 'badge bg-light text-dark';
+            noVarBadge.textContent = 'No variables detected yet.';
+            variableList.appendChild(noVarBadge);
+        }
+    }
+
+    // Initial check on page load
+    updateVariableList();
+
+    // Update on every input change in the textarea
+    templateTextarea.addEventListener('input', updateVariableList);
+});
+</script> 

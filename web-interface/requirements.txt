@@ -1,0 +1,7 @@
+Flask==3.0.3
+PyYAML==6.0.1
+Flask-Cors==4.0.1
+python-slugify==8.0.4
+python-dotenv==1.0.1
+# For server composition and async execution
+asyncio-pool==0.6.0 

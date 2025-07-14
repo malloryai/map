@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block title %}{{ tool.name }} - MCP Configurator{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="{{ url_for('ui.index') }}">
+                        <i class="bi bi-house-fill me-1"></i>Dashboard
+                    </a>
+                </li>
+                <li class="breadcrumb-item active">{{ tool.name }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title mb-0">
+                    <i class="bi bi-tool me-2"></i>{{ tool.name }}
+                    {% if tool.get('enabled', True) %}
+                        <span class="badge bg-success ms-2">Enabled</span>
+                    {% else %}
+                        <span class="badge bg-danger ms-2">Disabled</span>
+                    {% endif %}
+                </h2>
+            </div>
+            <div class="card-body">
+                <p class="lead">{{ tool.description }}</p>
+                
+                {% if tool.inputs %}
+                <h4><i class="bi bi-arrow-down-circle me-2"></i>Input Parameters</h4>
+                <div class="table-responsive mb-4">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Required</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for input in tool.inputs %}
+                            <tr>
+                                <td><code>{{ input.name }}</code></td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ input.type }}</span>
+                                </td>
+                                <td>
+                                    {% if input.required %}
+                                        <span class="badge bg-danger">Required</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Optional</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ input.description or 'No description available' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+
+                {% if tool.outputs %}
+                <h4><i class="bi bi-arrow-up-circle me-2"></i>Output Parameters</h4>
+                <div class="table-responsive mb-4">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for output in tool.outputs %}
+                            <tr>
+                                <td><code>{{ output.name }}</code></td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ output.type }}</span>
+                                </td>
+                                <td>{{ output.description or 'No description available' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+
+                {% if tool.prompts %}
+                <h4><i class="bi bi-chat-quote me-2"></i>Available Prompts</h4>
+                <div class="accordion mb-4" id="promptsAccordion">
+                    {% for prompt in tool.prompts %}
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="heading{{ loop.index }}">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                    data-bs-target="#collapse{{ loop.index }}" aria-expanded="false">
+                                <strong>{{ prompt.name }}</strong>
+                                <span class="ms-2 text-muted">{{ prompt.description }}</span>
+                            </button>
+                        </h2>
+                        <div id="collapse{{ loop.index }}" class="accordion-collapse collapse" 
+                             data-bs-parent="#promptsAccordion">
+                            <div class="accordion-body">
+                                {% if prompt.arguments %}
+                                <h6>Arguments:</h6>
+                                <ul>
+                                    {% for arg in prompt.arguments %}
+                                    <li>
+                                        <code>{{ arg.name }}</code>
+                                        {% if arg.required %}<span class="badge bg-danger ms-1">Required</span>{% endif %}
+                                        - {{ arg.description or 'No description' }}
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                                {% endif %}
+                                <h6>Template:</h6>
+                                <pre class="bg-light p-3 rounded"><code>{{ prompt.template }}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% if tool.resource_templates %}
+                <h4><i class="bi bi-folder-fill me-2"></i>Resource Templates</h4>
+                <div class="table-responsive mb-4">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>URI Template</th>
+                                <th>Name</th>
+                                <th>MIME Type</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for template in tool.resource_templates %}
+                            <tr>
+                                <td><code>{{ template.uriTemplate }}</code></td>
+                                <td>{{ template.name }}</td>
+                                <td>
+                                    <span class="badge bg-info">{{ template.mimeType }}</span>
+                                </td>
+                                <td>{{ template.description }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('ui.index') }}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+                    </a>
+                    
+                    <button class="btn {% if tool.get('enabled', True) %}btn-danger{% else %}btn-success{% endif %}"
+                            onclick="toggleToolDetail('{{ tool_directory }}', {{ tool.get('enabled', True)|lower }}, this)">
+                        {% if tool.get('enabled', True) %}
+                            <i class="bi bi-toggle-on me-1"></i>Disable Tool
+                        {% else %}
+                            <i class="bi bi-toggle-off me-1"></i>Enable Tool
+                        {% endif %}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function toggleToolDetail(toolDirectory, currentEnabled, buttonElement) {
+    const button = buttonElement;
+    const originalText = button.innerHTML;
+    
+    button.disabled = true;
+    button.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i>Loading...';
+    
+    try {
+        const response = await fetch(`/api/tools/${toolDirectory}/toggle`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast(result.message, 'success');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            throw new Error(result.error || 'Unknown error');
+        }
+    } catch (error) {
+        console.error('Error toggling tool:', error);
+        showToast(`Failed to toggle tool: ${error.message}`, 'error');
+        button.disabled = false;
+        button.innerHTML = originalText;
+    }
+}
+
+function showToast(message, type) {
+    let toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+        toastContainer.style.zIndex = '11';
+        document.body.appendChild(toastContainer);
+    }
+    
+    const toastId = 'toast-' + Date.now();
+    const bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
+    const icon = type === 'success' ? 'check-circle' : 'exclamation-triangle';
+    
+    const toastHTML = `
+        <div id="${toastId}" class="toast ${bgClass} text-white" role="alert">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi bi-${icon} me-2"></i>${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    `;
+    
+    toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+    
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement, { delay: 4000 });
+    toast.show();
+    
+    toastElement.addEventListener('hidden.bs.toast', () => {
+        toastElement.remove();
+    });
+}
+</script>
+{% endblock %} 

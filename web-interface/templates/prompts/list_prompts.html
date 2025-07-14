@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Custom Prompts - Mallory Automation Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <!-- Header -->
+    <div class="row mb-4 align-items-center">
+        <div class="col">
+            <h1 class="h2 mb-0"><strong>Custom Prompts</strong></h1>
+            <p class="mb-0 text-muted">Manage reusable prompt templates to use as tools.</p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('prompts.create_prompt') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i>Create Prompt
+            </a>
+        </div>
+    </div>
+
+    <!-- Prompts Table -->
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th>Description</th>
+                        <th class="text-center">Inputs</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for prompt in prompts %}
+                    <tr>
+                        <td><strong>{{ prompt.name }}</strong></td>
+                        <td><span class="badge bg-secondary">{{ prompt.category }}</span></td>
+                        <td class="text-secondary">{{ prompt.description | truncate(80) }}</td>
+                        <td class="text-center">{{ prompt.input_variables|length }}</td>
+                        <td class="text-center">
+                            <a href="{{ url_for('prompts.edit_prompt', prompt_id=prompt.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <form action="{{ url_for('prompts.delete_prompt', prompt_id=prompt.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this prompt?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5">
+                            <h5 class="text-muted">No prompts yet!</h5>
+                            <p class="text-muted">Create your first prompt to use it as a tool in your virtual servers.</p>
+                            <a href="{{ url_for('prompts.create_prompt') }}" class="btn btn-primary mt-3">
+                                <i class="bi bi-plus-circle me-1"></i>Create Your First Prompt
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %} 

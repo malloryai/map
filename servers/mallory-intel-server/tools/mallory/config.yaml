@@ -1,0 +1,252 @@
+name: mallory
+enabled: true
+description: Query Mallory AI threat intelligence platform for comprehensive security
+  intelligence.
+module: tool.py
+entry_point: mallory_query
+inputs:
+- name: action
+  type: string
+  required: true
+  description: 'Action to perform: ''sources'', ''references'', ''vulnerability'',
+    ''exploits'''
+- name: indicator
+  type: string
+  required: false
+  description: Search query for references, or CVE identifier for exploits. Can be
+    IOCs, keywords like 'ransomware', 'phishing', domains, IPs, etc.
+- name: source_filter
+  type: string
+  required: false
+  description: 'Source slug filter for references (format: source:[SLUG])'
+- name: product
+  type: string
+  required: false
+  description: 'Product/technology name for vulnerability search. Examples: ''apache'',
+    ''nginx'', ''windows'', ''linux'', ''mysql'', ''wordpress'', ''chrome'', ''firefox''.
+    Use the common/simplified name of the software or system.'
+- name: vendor
+  type: string
+  required: false
+  description: 'Vendor/publisher name for vulnerability search. Examples: ''apache'',
+    ''microsoft'', ''google'', ''oracle'', ''cisco'', ''redhat'', ''canonical''. Use
+    the organization that develops/maintains the product.'
+- name: cpe
+  type: string
+  required: false
+  description: 'CPE 2.3 string for vulnerability search. Format: cpe:2.3:a:vendor:product:version:update:edition:language:sw_edition:target_sw:target_hw:other.
+    Example: ''cpe:2.3:a:apache:http_server:2.4.50'''
+outputs:
+- name: intel
+  type: dict
+prompts:
+- name: mallory-sources
+  description: Instructions for querying Mallory AI OSINT sources
+  template: '# Mallory AI OSINT Sources Query
+
+
+    ## How to use mallory.query for sources:
+
+
+    ```
+
+    mallory.query(action="sources")
+
+    ```
+
+
+    **Purpose**: Enumerate all OSINT sources monitored by Mallory AI
+
+    **Returns**: Source configurations, reference counts, and monitoring options
+
+    '
+- name: mallory-references
+  description: Instructions for querying Mallory AI intelligence references
+  arguments:
+  - name: search_term
+    description: Search term or indicator to look for
+    required: false
+  - name: source_filter
+    description: Source filter to apply
+    required: false
+  template: '# Mallory AI Intelligence References Query
+
+
+    ## How to use mallory.query for references:
+
+
+    **Search by keyword/term**:
+
+    ```
+
+    mallory.query(action="references", indicator="ransomware")
+
+    mallory.query(action="references", indicator="phishing")
+
+    mallory.query(action="references", indicator="malware")
+
+    ```
+
+
+    **Search by specific IOC**:
+
+    ```
+
+    mallory.query(action="references", indicator="malicious-domain.com")
+
+    mallory.query(action="references", indicator="192.168.1.100")
+
+    mallory.query(action="references", indicator="d41d8cd98f00b204e9800998ecf8427e")
+
+    ```
+
+
+    **Filter by specific source**:
+
+    ```
+
+    mallory.query(action="references", source_filter="source:twitter")
+
+    mallory.query(action="references", indicator="apt", source_filter="source:github")
+
+    ```
+
+
+    **General search (all references)**:
+
+    ```
+
+    mallory.query(action="references")
+
+    ```
+
+
+    **Purpose**: Search threat intelligence references using keywords, IOCs, or source
+    filters
+
+    **Note**: The ''indicator'' parameter accepts both specific IOCs and general search
+    terms
+
+    **Returns**: Intelligence data from monitored OSINT sources matching the search
+    criteria
+
+    '
+- name: mallory-vulnerability
+  description: Instructions for Mallory AI vulnerability inference
+  arguments:
+  - name: product
+    description: Product name to search
+    required: false
+  - name: vendor
+    description: Vendor name to search
+    required: false
+  template: '# Mallory AI Vulnerability Inference
+
+
+    ## How to use mallory.query for vulnerability search:
+
+
+    **By product/vendor (recommended approach)**:
+
+    ```
+
+    mallory.query(action="vulnerability", product="apache", vendor="apache")
+
+    mallory.query(action="vulnerability", product="windows", vendor="microsoft")
+
+    mallory.query(action="vulnerability", product="mysql", vendor="oracle")
+
+    mallory.query(action="vulnerability", product="nginx", vendor="nginx")
+
+    mallory.query(action="vulnerability", product="wordpress", vendor="wordpress")
+
+    ```
+
+
+    **By CPE string (for precise matching)**:
+
+    ```
+
+    mallory.query(action="vulnerability", cpe="cpe:2.3:a:apache:http_server:2.4.50")
+
+    mallory.query(action="vulnerability", cpe="cpe:2.3:o:microsoft:windows_10:1909")
+
+    ```
+
+
+    **Common Product Examples**:
+
+    - **Web Servers**: apache, nginx, iis
+
+    - **Operating Systems**: windows, linux, ubuntu, centos, macos
+
+    - **Databases**: mysql, postgresql, mongodb, oracle
+
+    - **Applications**: wordpress, drupal, joomla, jenkins
+
+    - **Browsers**: chrome, firefox, safari, edge
+
+
+    **Common Vendor Examples**:
+
+    - **apache** (Apache Software Foundation)
+
+    - **microsoft** (Microsoft Corporation)
+
+    - **google** (Google LLC)
+
+    - **oracle** (Oracle Corporation)
+
+    - **cisco** (Cisco Systems)
+
+    - **redhat** (Red Hat Inc)
+
+
+    **Purpose**: Match software products to vulnerability database for inference
+
+    **Returns**: Product matches that can be used for vulnerability assessment
+
+    '
+- name: mallory-exploits
+  description: Instructions for querying Mallory AI exploit intelligence
+  arguments:
+  - name: cve_id
+    description: CVE identifier
+    required: false
+  template: '# Mallory AI Exploit Intelligence
+
+
+    ## How to use mallory.query for exploits:
+
+
+    ```
+
+    mallory.query(action="exploits", indicator="CVE-2023-1234")
+
+    mallory.query(action="exploits", indicator="CVE-2024-5678")
+
+    ```
+
+
+    **Purpose**: Get exploit information for specific vulnerabilities
+
+    **Returns**: Exploit maturity, authors, disclosure dates, and URLs
+
+    '
+resource_templates:
+- uriTemplate: mallory://sources
+  name: Mallory OSINT Sources
+  description: List of all OSINT sources monitored by Mallory AI
+  mimeType: application/json
+- uriTemplate: mallory://references/{indicator}
+  name: Mallory Intelligence References
+  description: Threat intelligence references for specific indicators or search terms
+  mimeType: application/json
+- uriTemplate: mallory://vulnerability/{product}
+  name: Mallory Vulnerability Intelligence
+  description: Product vulnerability matching and inference
+  mimeType: application/json
+- uriTemplate: mallory://exploits/{cve_id}
+  name: Mallory Exploit Intelligence
+  description: Exploit information for CVE identifiers
+  mimeType: application/json

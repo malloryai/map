@@ -1,0 +1,8 @@
+# MCP Server (Original) Requirements
+mcp==1.10.1
+fastapi==0.111.0
+uvicorn==0.30.1
+PyYAML==6.0.1
+json-rpc==1.15.0
+requests==2.32.3
+python-dotenv==1.0.1

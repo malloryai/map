@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Mallory Automation Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+
+    <!-- Header -->
+    <div class="row mb-4 align-items-center">
+        <div class="col">
+            <h1 class="h2 mb-0"><strong>Mallory Automation Platform</strong></h1>
+            <p class="mb-0 text-muted">Advanced Cybersecurity Tool Orchestration & Automation</p>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="card-body text-center">
+                    <h2 class="display-4 text-primary">{{ total_count }}</h2>
+                    <p class="mb-0">Security Tools</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="card-body text-center">
+                    <h2 class="display-4 text-success">{{ enabled_count }}</h2>
+                    <p class="mb-0">Active</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="card-body text-center">
+                    <h2 class="display-4 text-warning">{{ standby_count }}</h2>
+                    <p class="mb-0">Standby</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="card-body text-center">
+                    <h2 class="display-4 text-info">{{ server_count }}</h2>
+                    <p class="mb-0">Virtual Servers</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <a href="{{ url_for('ui.registry_dashboard') }}" class="card server-card h-100 text-decoration-none">
+                <div class="card-body text-center">
+                    <i class="bi bi-hdd-network display-4 text-primary mb-3"></i>
+                    <h5 class="card-title">Server Discovery</h5>
+                    <p class="card-text text-secondary">Discover and manage MCP servers</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="{{ url_for('ui.servers_list') }}" class="card virtual-card h-100 text-decoration-none">
+                <div class="card-body text-center">
+                    <i class="bi bi-collection display-4 text-success mb-3"></i>
+                    <h5 class="card-title">Virtual Servers</h5>
+                    <p class="card-text text-secondary">Manage virtual server configurations</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="{{ url_for('ui.create_server') }}" class="card h-100 text-decoration-none">
+                <div class="card-body text-center">
+                    <i class="bi bi-plus-circle display-4 text-info mb-3"></i>
+                    <h5 class="card-title">Create Server</h5>
+                    <p class="card-text text-secondary">Build custom tool collections</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 text-decoration-none">
+                <div class="card-body text-center">
+                    <i class="bi bi-graph-up display-4 text-warning mb-3"></i>
+                    <h5 class="card-title">Analytics</h5>
+                    <p class="card-text text-secondary">Monitor tool performance</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Available Tools -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">
+                        <i class="bi bi-grid-3x3-gap-fill me-2"></i>Available Tools
+                    </h4>
+                    <small class="text-muted">Click the toggle buttons to enable or disable tools. Changes take effect immediately.</small>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if tools %}
+                            {% for tool in tools %}
+                            <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
+                                <div class="card tool-card h-100">
+                                    <div class="card-body d-flex justify-content-between align-items-center">
+                                        <a href="{{ url_for('ui.tool_details', tool_directory=tool.directory) }}" class="text-decoration-none text-primary fw-bold">
+                                            {{ tool.name }}
+                                        </a>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" 
+                                                   id="toolToggle-{{ tool.directory.replace('/', '-') }}" 
+                                                   {% if tool.get('enabled', True) %}checked{% endif %} 
+                                                   onchange="toggleTool('{{ tool.directory }}', this.checked)">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="col-12 text-center py-5">
+                                <i class="bi bi-info-circle display-4 text-muted mb-3"></i>
+                                <h5 class="text-muted">No tools discovered</h5>
+                                <p class="text-muted">Run server discovery to find available tools.</p>
+                                <a href="{{ url_for('ui.registry_dashboard') }}" class="btn btn-primary">Go to Registry</a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function toggleTool(toolDirectory, isEnabled) {
+    const toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        // Create toast container if it doesn't exist
+        const container = document.createElement('div');
+        container.id = 'toast-container';
+        container.className = 'position-fixed top-0 end-0 p-3';
+        container.style.zIndex = 1100;
+        document.body.appendChild(container);
+    }
+
+    try {
+        const response = await fetch(`/api/tools/${toolDirectory}/toggle`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ enabled: isEnabled })
+        });
+        const result = await response.json();
+
+        if (result.success) {
+            showToast(result.message, 'success');
+            // Optional: You might want to update stats on the page dynamically
+        } else {
+            throw new Error(result.error || 'An unknown error occurred.');
+        }
+    } catch (error) {
+        showToast(`Error: ${error.message}`, 'danger');
+        // Revert the toggle state on failure
+        const toggle = document.getElementById(`toolToggle-${toolDirectory.replace('/', '-')}`);
+        if (toggle) {
+            toggle.checked = !isEnabled;
+        }
+    }
+}
+
+function showToast(message, type = 'success') {
+    const toastId = `toast-${Date.now()}`;
+    const bgClass = `bg-${type}`;
+    const toastHTML = `
+        <div id="${toastId}" class="toast align-items-center text-white ${bgClass} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('toast-container').insertAdjacentHTML('beforeend', toastHTML);
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement, { delay: 3000 });
+    toast.show();
+}
+</script>
+{% endblock %} 

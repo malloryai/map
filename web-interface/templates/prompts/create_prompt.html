@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Create Custom Prompt - Mallory Automation Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2 mb-0"><strong>Create Custom Prompt</strong></h1>
+            <p class="mb-0 text-muted">Design a new reusable prompt template.</p>
+        </div>
+    </div>
+
+    <form action="{{ url_for('prompts.create_prompt') }}" method="POST">
+        {% set submit_button_text = 'Create Prompt' %}
+        {% include "prompts/_form.html" %}
+    </form>
+
+</div>
+{% endblock %} 

@@ -1,0 +1,54 @@
+name: urlscan
+enabled: true  # Set to false to disable this tool
+description: Retrieve scan results from urlscan.io for a given domain or URL.
+module: tool.py
+entry_point: urlscan_scan
+inputs:
+  - name: url
+    type: string
+    required: true
+outputs:
+  - name: scan_data
+    type: dict
+
+prompts:
+  - name: urlscan-howto
+    description: Instructions for scanning URLs with URLScan.io
+    arguments:
+      - name: url
+        description: URL to scan
+        required: false
+    template: |
+      # URLScan.io Web Analysis
+
+      ## How to use the urlscan.scan tool:
+
+      1. **Prepare the URL**: {url}
+         - Ensure proper URL format (include https://)
+         - Be cautious with potentially malicious URLs
+
+      2. **Execute the scan**:
+         ```
+         urlscan.scan(url="{url}")
+         ```
+
+      3. **Analyze scan results**:
+         - Screenshot and DOM analysis
+         - Network requests and redirects
+         - JavaScript behavior
+         - Detected technologies
+         - Security indicators
+
+      4. **Investigation points**:
+         - Check for suspicious redirects
+         - Review loaded resources
+         - Analyze JavaScript for malicious code
+         - Look for phishing indicators
+
+      **Example**: urlscan.scan(url="{url}")
+
+resource_templates:
+  - uriTemplate: "urlscan://scan/{url}"
+    name: "URLScan Analysis Report"
+    description: "URLScan.io analysis report for any URL"
+    mimeType: "application/json" 

@@ -1,0 +1,89 @@
+services:
+  web-interface:
+    build:
+      context: ./web-interface
+      dockerfile: Dockerfile
+    ports:
+      - "8080:5000"  # Changed from 5001 to match current usage
+    volumes:
+      - ./mcp-server:/mcp-server
+      - ./mcp-proxy-server:/mcp-proxy-server  # Added proxy server access
+      - ./servers-configs:/servers-configs    # Added virtual server configs
+      - ./web-interface:/app
+    networks:
+      - mcp_network
+    environment:
+      # API keys for tools
+      - VIRUSTOTAL_API_KEY=${VIRUSTOTAL_API_KEY:-}
+      - URLSCAN_API_KEY=${URLSCAN_API_KEY:-}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    develop:
+      watch:
+        - action: sync
+          path: ./web-interface
+          target: /app
+          ignore:
+            - __pycache__/
+            - "*.pyc"
+        - action: rebuild
+          path: ./web-interface/requirements.txt
+
+  mcp-server:
+    build:
+      context: ./mcp-server
+      dockerfile: Dockerfile
+    volumes:
+      - ./mcp-server/tools:/app/tools
+    networks:
+      - mcp_network
+    environment:
+      # API keys for tools
+      - VIRUSTOTAL_API_KEY=${VIRUSTOTAL_API_KEY:-}
+      - URLSCAN_API_KEY=${URLSCAN_API_KEY:-}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    develop:
+      watch:
+        - action: sync
+          path: ./mcp-server
+          target: /app
+          ignore:
+            - __pycache__/
+            - "*.pyc"
+        - action: rebuild
+          path: ./mcp-server/requirements.txt
+
+  # MCP Proxy Server (stdio transport) - not running as service since it's CLI-based
+  # Use: docker-compose exec mcp-proxy-server python server.py --server=test-server
+  mcp-proxy-server:
+    build:
+      context: ./mcp-proxy-server
+      dockerfile: Dockerfile
+    volumes:
+      - ./mcp-proxy-server:/app
+      - ./mcp-server:/mcp-server
+      - ./servers-configs:/servers-configs
+    networks:
+      - mcp_network
+    environment:
+      - VIRUSTOTAL_API_KEY=${VIRUSTOTAL_API_KEY:-}
+      - URLSCAN_API_KEY=${URLSCAN_API_KEY:-}
+    profiles:
+      - manual  # Only start manually with --profile manual
+    command: ["tail", "-f", "/dev/null"]  # Keep container running for exec commands
+
+networks:
+  mcp_network:
+    driver: bridge
+
+volumes:
+  tools_data:
+    # This volume is implicitly created and managed by Docker Compose
+    # The data is shared between services by mapping it in the service definitions above 

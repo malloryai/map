@@ -1,0 +1,40 @@
+<div class="card">
+    <div class="card-header">
+        <h4 class="card-title mb-0">
+            <i class="bi bi-quote me-2"></i>Available Custom Prompts
+        </h4>
+    </div>
+    <div class="card-body">
+        {% if prompts %}
+            <ul class="list-group list-group-flush">
+                {% for prompt in prompts %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong class="d-block">{{ prompt.name }}</strong>
+                            <small class="text-secondary">{{ prompt.description }}</small>
+                            <div class="mt-1">
+                                <span class="badge bg-secondary">{{ prompt.category }}</span>
+                            </div>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" 
+                                   type="checkbox" 
+                                   role="switch"
+                                   name="selected_prompts" 
+                                   value="{{ prompt.id }}" 
+                                   id="prompt-{{ prompt.id }}"
+                                   {% if server and prompt.id in (server.selected_prompts or []) %}checked{% endif %}>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class="text-center py-3">
+                <p class="text-muted mb-2">No custom prompts have been created yet.</p>
+                <a href="{{ url_for('prompts.create_prompt') }}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-plus-circle me-1"></i>Create a Prompt
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div> 

@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+
+{% block title %}Virtual Server: {{ server.name }} - Mallory Automation Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+
+    <!-- Header -->
+    <div class="row mb-4 align-items-center">
+        <div class="col">
+            <h1 class="h2 mb-0"><strong>{{ server.name }}</strong></h1>
+            <p class="mb-0 text-muted">Virtual Server Details</p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('ui.servers_list') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Back to Servers
+            </a>
+            <a href="{{ url_for('ui.edit_server', server_name=server.name) }}" class="btn btn-primary">
+                <i class="bi bi-pencil-square me-1"></i>Edit Server
+            </a>
+        </div>
+    </div>
+
+    <!-- Server Details -->
+    <div class="row mb-4">
+        <div class="col-md-7">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">
+                        <i class="bi bi-info-circle me-2"></i>Server Information
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <h5>Description</h5>
+                    <p class="text-secondary">{{ server.description }}</p>
+                    
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <small class="text-muted">Status</small>
+                            <p>
+                                <span class="badge {{ 'bg-success' if server.enabled else 'bg-danger' }}">
+                                    {{ 'Enabled' if server.enabled else 'Disabled' }}
+                                </span>
+                            </p>
+                        </div>
+                        <div class="col-sm-6">
+                            <small class="text-muted">Created At</small>
+                            <p>{{ server.created_at[:19] }}</p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <small class="text-muted">Last Updated</small>
+                            <p>{{ server.updated_at[:19] }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">
+                        <i class="bi bi-shield-lock me-2"></i>Authentication
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <h6>API Key</h6>
+                    <div class="input-group mb-3">
+                        <input type="password" class="form-control" id="apiKeyInput" value="{{ server.api_key if server.api_key else 'No key generated yet' }}" readonly>
+                        <button class="btn btn-outline-secondary" type="button" onclick="toggleApiKeyVisibility()">
+                            <i class="bi bi-eye" id="apiKeyEyeIcon"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('{{ server.api_key }}', 'API Key')" {% if not server.api_key %}disabled{% endif %}>
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <strong>Treat this key like a password!</strong> Do not share it or expose it in client-side code.
+                    </div>
+
+                    <button class="btn btn-danger w-100" onclick="regenerateApiKey('{{ server.name }}')">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Regenerate API Key
+                    </button>
+                    <div class="form-text text-center mt-1">This will invalidate the current key.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Proxy URLs and MCP Config -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">
+                        <i class="bi bi-file-code me-2"></i>Client Configuration
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                             <h6>MCP Proxy URL</h6>
+                            <div class="input-group mb-3">
+                                <input type="text" class="form-control" value="{{ request.url_root }}mcp/{{ server.name }}" readonly>
+                                <button class="btn btn-outline-secondary" onclick="copyToClipboard('{{ request.url_root }}mcp/{{ server.name }}', 'MCP Proxy URL')">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>MCP-SSE Proxy URL</h6>
+                            <div class="input-group mb-3">
+                                <input type="text" class="form-control" value="{{ request.url_root }}mcp-sse/{{ server.name }}" readonly>
+                                <button class="btn btn-outline-secondary" onclick="copyToClipboard('{{ request.url_root }}mcp-sse/{{ server.name }}', 'MCP-SSE Proxy URL')">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <hr/>
+                    <h6>Full MCP JSON Configuration</h6>
+                    <p class="text-muted small">Use this snippet to configure your MCP client (e.g., in Cursor's <code>mcp.json</code> file).</p>
+                    <div class="position-relative">
+                        <pre class="bg-light p-3 rounded-2"><code id="mcpConfigBlock" class="language-json"></code></pre>
+                        <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 mt-2 me-2" onclick="toggleMcpConfigKeyVisibility()">
+                            <i id="mcpConfigKeyEyeIcon" class="bi bi-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 mt-2 me-5" onclick="copyMcpConfig()">
+                            <i class="bi bi-clipboard"></i> Copy
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Selected Tools -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">
+                        <i class="bi bi-tools me-2"></i>Selected Tools ({{ server.selected_tools|length }})
+                    </h4>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Tool Name</th>
+                                <th>Source Server</th>
+                                <th>Description</th>
+                                <th class="text-center">Inputs</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tool in server.selected_tools %}
+                            <tr>
+                                <td><strong>{{ tool.tool_name }}</strong></td>
+                                <td>
+                                    <a href="{{ url_for('ui.registry_entry_details', server_name=tool.server_name) }}">{{ tool.server_name }}</a>
+                                </td>
+                                <td class="text-secondary">{{ tool.config.description | truncate(80) }}</td>
+                                <td class="text-center">{{ tool.config.data.inputs|length }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let isConfigKeyVisible = false;
+
+document.addEventListener('DOMContentLoaded', () => {
+    updateMcpConfig();
+});
+
+function copyToClipboard(text, type) {
+    navigator.clipboard.writeText(text).then(() => {
+        showToast(`${type} copied to clipboard!`, 'success');
+    }).catch(err => {
+        showToast(`Failed to copy ${type}.`, 'danger');
+        console.error('Error copying text: ', err);
+    });
+}
+
+function toggleApiKeyVisibility() {
+    const apiKeyInput = document.getElementById('apiKeyInput');
+    const eyeIcon = document.getElementById('apiKeyEyeIcon');
+    if (apiKeyInput.type === 'password') {
+        apiKeyInput.type = 'text';
+        eyeIcon.classList.remove('bi-eye');
+        eyeIcon.classList.add('bi-eye-slash');
+    } else {
+        apiKeyInput.type = 'password';
+        eyeIcon.classList.remove('bi-eye-slash');
+        eyeIcon.classList.add('bi-eye');
+    }
+}
+
+function updateMcpConfig() {
+    const clientName = '{{ server.name }}';
+    const apiKey = '{{ server.api_key }}';
+    const mcpUrl = '{{ request.url_root }}mcp/' + clientName;
+
+    const config = {
+        mcpServers: {
+            [clientName]: {
+                type: "streamable-http",
+                url: mcpUrl,
+            }
+        }
+    };
+
+    if (apiKey) {
+        config.mcpServers[clientName].headers = {
+            "Authorization": "Bearer " + (isConfigKeyVisible ? apiKey : '••••••••••••••••••••••••••••••')
+        };
+    }
+
+    const configStr = JSON.stringify(config, null, 2);
+    const configBlock = document.getElementById('mcpConfigBlock');
+    configBlock.textContent = configStr;
+    
+    // If highlight.js is available, use it
+    if (typeof hljs !== 'undefined') {
+        hljs.highlightElement(configBlock);
+    }
+}
+
+function toggleMcpConfigKeyVisibility() {
+    isConfigKeyVisible = !isConfigKeyVisible;
+    const eyeIcon = document.getElementById('mcpConfigKeyEyeIcon');
+    if (isConfigKeyVisible) {
+        eyeIcon.classList.remove('bi-eye');
+        eyeIcon.classList.add('bi-eye-slash');
+    } else {
+        eyeIcon.classList.remove('bi-eye-slash');
+        eyeIcon.classList.add('bi-eye');
+    }
+    updateMcpConfig();
+}
+
+function copyMcpConfig() {
+    // Temporarily show the key to copy the real value
+    const wasVisible = isConfigKeyVisible;
+    isConfigKeyVisible = true;
+    updateMcpConfig();
+
+    const configText = document.getElementById('mcpConfigBlock').textContent;
+    navigator.clipboard.writeText(configText).then(() => {
+        showToast('MCP config copied to clipboard!', 'success');
+    }).catch(err => {
+        showToast('Failed to copy config.', 'danger');
+        console.error('Error copying config: ', err);
+    });
+
+    // Revert to the original visibility state
+    isConfigKeyVisible = wasVisible;
+    updateMcpConfig();
+}
+
+async function regenerateApiKey(serverName) {
+    if (!confirm('Are you sure you want to regenerate the API key? The old key will be permanently invalidated.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/servers/${serverName}/regenerate-key`, {
+            method: 'POST',
+        });
+        const result = await response.json();
+
+        if (result.success) {
+            document.getElementById('apiKeyInput').value = result.api_key;
+            // Also update the config snippet and hide the key
+            isConfigKeyVisible = false;
+            updateMcpConfig();
+            showToast('API Key regenerated successfully!', 'success');
+        } else {
+            throw new Error(result.error || 'Unknown error');
+        }
+    } catch (error) {
+        showToast(`Failed to regenerate API key: ${error.message}`, 'danger');
+        console.error('Error regenerating key:', error);
+    }
+}
+
+function showToast(message, type = 'success') {
+    const toastId = `toast-${Date.now()}`;
+    const toastContainer = document.getElementById('toast-container') || createToastContainer();
+    const bgClass = `bg-${type}`;
+    const toastHTML = `
+        <div id="${toastId}" class="toast align-items-center text-white ${bgClass} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    `;
+    toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+    const toastElement = new bootstrap.Toast(document.getElementById(toastId), { delay: 3000 });
+    toastElement.show();
+}
+
+function createToastContainer() {
+    const container = document.createElement('div');
+    container.id = 'toast-container';
+    container.className = 'position-fixed top-0 end-0 p-3';
+    container.style.zIndex = 1100;
+    document.body.appendChild(container);
+    return container;
+}
+</script>
+{% endblock %} 

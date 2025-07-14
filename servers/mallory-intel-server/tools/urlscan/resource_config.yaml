@@ -1,0 +1,16 @@
+handlers:
+  - uri_prefix: "urlscan://"
+    uri_pattern: "urlscan://scan/{url}"
+    type: "single_tool"
+    tool_name: "urlscan"
+    parameter_mapping:
+      url: "url"
+    metadata:
+      source: "URLScan.io"
+    response_template: |
+      {
+        "source": "{source}",
+        "url": "{url}",
+        "timestamp": "{timestamp}",
+        "data": {tool_result}
+      } 

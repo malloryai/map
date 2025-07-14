@@ -1,0 +1,41 @@
+name: "MCP Configuration Generator"
+description: HTML configuration generator for MCP server setup
+uri: "file://mcp-config-generator"
+mimeType: "text/html"
+template: |
+  <!DOCTYPE html>
+  <html>
+  <head>
+      <title>MCP Server Configuration Generator</title>
+      <style>
+          body { font-family: Arial, sans-serif; margin: 40px; }
+          .config { background: #f5f5f5; padding: 20px; border-radius: 5px; }
+          pre { background: #000; color: #0f0; padding: 15px; border-radius: 5px; }
+      </style>
+  </head>
+  <body>
+      <h1>Mallory Intel MCP Server</h1>
+      <p>This server provides threat intelligence tools:</p>
+      <ul>
+          <li><strong>virustotal.query</strong> - Query VirusTotal for threat intelligence</li>
+          <li><strong>mallory.query</strong> - Query internal threat intelligence system</li>
+          <li><strong>urlscan.scan</strong> - Retrieve URLScan.io results</li>
+          <li><strong>howto.cve</strong> - Get CVE data fetching instructions</li>
+      </ul>
+      
+      <h2>Cursor Configuration</h2>
+      <div class="config">
+          <pre>{
+    "mcpServers": {
+      "mallory-intel-server": {
+        "command": "python",
+        "args": ["-u", "mcp-server/server_stdio.py"],
+        "env": {
+          "VIRUSTOTAL_API_KEY": "your_api_key_here"
+        }
+      }
+    }
+  }</pre>
+      </div>
+  </body>
+  </html> 

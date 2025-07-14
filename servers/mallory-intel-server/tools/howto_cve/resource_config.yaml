@@ -1,0 +1,29 @@
+handlers:
+  - uri_prefix: "cve://"
+    uri_pattern: "cve://report/{cve_id}"
+    type: "multi_tool"
+    tools:
+      - name: "howto_cve"
+        section_header: "## Instructions"
+        format: "text"
+        parameter_mapping: {}
+      - name: "virustotal"
+        section_header: "## VirusTotal Intelligence"
+        format: "json_code_block"
+        parameter_mapping:
+          query: "cve_id"
+      - name: "mallory"
+        section_header: "## Internal Intelligence (Mallory)"
+        format: "json_code_block"
+        parameter_mapping:
+          indicator: "cve_id"
+    response_template: |
+      # CVE Investigation Report: {cve_id}
+
+      Generated: {timestamp}
+
+      {sections}
+
+      ## Summary
+      This report combines intelligence from multiple sources for comprehensive CVE analysis.
+      Use the findings above to assess threat level and plan remediation activities. 

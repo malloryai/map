@@ -1,6 +1,6 @@
 # Mallory Automation Platform
 
-Mallory is a powerful, flexible automation platform designed to create and manage virtual MCP (Mallory Control Protocol) servers. It allows you to aggregate tools from various underlying MCP servers, create custom prompts, and expose them through a unified, secure interface.
+Mallory is a powerful, flexible automation platform designed to create and manage virtual MCP (Anthropic's Model Control Protocol) servers. It allows you to aggregate tools from various underlying MCP servers, create custom prompts, and expose them through a unified, secure interface.
 
 ## Key Features
 

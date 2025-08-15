@@ -2,6 +2,7 @@
 
 Mallory is a powerful, flexible automation platform designed to create and manage virtual MCP (Anthropic's Model Control Protocol) servers. It allows you to aggregate tools from various underlying MCP servers, create custom prompts, and expose them through a unified, secure interface.
 
+
 ## Key Features
 
 - **Virtual Server Creation**: Define virtual servers that aggregate tools and prompts from multiple real servers.
@@ -25,8 +26,8 @@ This guide will walk you through setting up the Mallory platform for local devel
 First, clone the repository to your local machine.
 
 ```bash
-git clone <repository_url>
-cd agent
+git clone <repository_url> <directory>
+cd <directory>
 ```
 
 Next, set up a Python virtual environment to keep dependencies isolated.
@@ -43,38 +44,38 @@ Now, install the required Python packages for both the web interface and the bac
 pip install -r web-interface/requirements.txt
 
 # Install intel server dependencies
-pip install -r servers/mallory-intel-server/requirements.txt
+pip install -r servers/intel-toolchain/requirements.txt
 ```
 
 ### 3. Configuration
 
-Some of the tools provided by the `mallory-intel-server` require API keys to function correctly. You will need to create a `.env` file to store these secrets.
+Some of the tools provided by the `intel-toolchain` virtual MCP server require API keys to function correctly. You will need to create a `.env` file to store these secrets.
 
-Create a new file named `.env` inside the `servers/mallory-intel-server/` directory:
+Create a new file named `.env` inside the `servers/intel-toolchain/` directory:
 
-`servers/mallory-intel-server/.env`
+Assuming they're set in your environment, you can quickly create a .env with the following.
 
-Add your API keys to this file, following the format below:
-
-```dotenv
-# servers/mallory-intel-server/.env
-
-VIRUSTOTAL_API_KEY=your_virustotal_api_key
-URLSCAN_API_KEY=your_urlscan_api_key
-MALLORY_API_KEY=your_mallory_api_key
+```bash 
+ENVFILE=servers/intel-toolchain/.env
+touch $ENVFILE
+echo VIRUSTOTAL_API_KEY=$VIRUSTOTAL_API_KEY >> $ENVFILE
+echo URLSCAN_API_KEY=$URLSCAN_API_KEY >> $ENVFILE
+echo MALLORY_API_KEY=$MALLORY_API_KEY >> $ENVFILE
 ```
+
+test it with the following `$ cat servers/intel-toolchain/` ... it should show a valid key for each service
 
 ### 4. Running the Application
 
 The main entry point for the platform is the Flask web interface. To start the server, run the following command from the project root:
 
 ```bash
-python3 web-interface/run.py
+uv run python3 web-interface/run.py
 ```
 
 The server will start, and you can access the web interface by navigating to `http://127.0.0.1:8080` in your web browser.
 
-The `mallory-intel-server` is started automatically as a subprocess by the web interface proxy when one of its tools is called, so you do not need to run it separately.
+Virtual servers (such as 'intel-toolchain') are started automatically as a subprocess by the web interface proxy when one of its tools is called, so you do not need to run it separately.
 
 ---
 
@@ -91,7 +92,7 @@ The `mallory-intel-server` is started automatically as a subprocess by the web i
 - Downloadable configs
 
 ### In flight:
-- Add th e ability to define a server in the registry either as remote, local, GitHub
+- Add the ability to define a server in the registry either as remote, local, GitHub
   - Add the ability to download local server from a GitHub repo
   - Partially, needs so more testing and likely some fixes
 - Take care of port collision
